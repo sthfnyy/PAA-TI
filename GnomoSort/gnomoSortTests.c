@@ -26,7 +26,7 @@ void swap(int *a, int *b)
     *b = temp;
 }
 
-/**
+/*
  * Algoritmo Principal: Gnome Sort
  * - Se os elementos estão na ordem correta, o "gnomo" avança (index++).
  * - Se estão fora de ordem, ele troca os dois e volta uma posição (index--).
