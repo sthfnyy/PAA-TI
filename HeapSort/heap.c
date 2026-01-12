@@ -2,44 +2,93 @@
 #include <stdlib.h>
 #include <time.h>
 
-// faz as trocas dos valores no vetor
+/* ===================== utilitarios ===================== */
+
+static void imprimirVetorInline(const int *arr, int n) {
+    printf("[");
+    for (int i = 0; i < n; i++) {
+        printf("%d", arr[i]);
+        if (i < n - 1) printf(", ");
+    }
+    printf("]");
+}
+
+static void imprimirEstado(const int *arr, int heapSize, int n) {
+    printf("heap: ");
+    imprimirVetorInline(arr, heapSize);
+    printf(" | ordenado: ");
+    imprimirVetorInline(arr + heapSize, n - heapSize);
+    printf("\n");
+}
+
 void swap(int *a, int *b) {
     int temp = *a;
     *a = *b;
     *b = temp;
 }
 
-// garante que a subárvore com raiz no índice i obedeça a regra de max-heap (pai maior que os filhos)
+/* ===================== HeapSort ===================== */
+
 void heapify(int arr[], int n, int i) {
-    int maior = i; 
-    int l = 2 * i + 1; 
+    int maior = i;
+    int l = 2 * i + 1;
     int r = 2 * i + 2;
 
-    if (l < n && arr[l] > arr[maior]) 
-        maior = l;
-    if (r < n && arr[r] > arr[maior]) 
-        maior = r;
+    if (l < n && arr[l] > arr[maior]) maior = l;
+    if (r < n && arr[r] > arr[maior]) maior = r;
 
     if (maior != i) {
-        swap(&arr[i], &arr[maior]);   // <-- corrigido (passa ponteiro)
+        swap(&arr[i], &arr[maior]);
         heapify(arr, n, maior);
     }
 }
 
-// ordena o vetor usando Heap Sort.
 void heapSort(int arr[], int n) {
-    // Vai chamando heapify para transformar o vetor em um max-heap
-    for (int i = (n / 2) - 1; i >= 0; i--) 
+    // constroi max-heap
+    for (int i = (n / 2) - 1; i >= 0; i--)
         heapify(arr, n, i);
 
-    // extração do maior repetidamente (ordenação)
+    // extrai o maior repetidamente
     for (int i = n - 1; i > 0; i--) {
-        swap(&arr[0], &arr[i]);       // <-- corrigido (passa ponteiro)
+        swap(&arr[0], &arr[i]);
         heapify(arr, i, 0);
     }
 }
 
-// leitura dos dados do arquivo
+/* ===================== DEMO (saida limpa) ===================== */
+
+static void heapSortDemo(int arr[], int n) {
+    printf("\n=== HEAPSORT (DEMO, n=%d) ===\n", n);
+
+    printf("inicial: ");
+    imprimirVetorInline(arr, n);
+    printf("\n");
+
+    // 1) construir max-heap
+    for (int i = (n / 2) - 1; i >= 0; i--)
+        heapify(arr, n, i);
+
+    printf("heap construid.: ");
+    imprimirVetorInline(arr, n);
+    printf("\n\n");
+
+    // 2) extracoes
+    for (int end = n - 1; end > 0; end--) {
+        printf("passo %2d: troca %d <-> %d\n", (n - end), arr[0], arr[end]);
+
+        swap(&arr[0], &arr[end]);
+        heapify(arr, end, 0);
+
+        imprimirEstado(arr, end, n);
+    }
+
+    printf("\nfinal:   ");
+    imprimirVetorInline(arr, n);
+    printf("\n");
+}
+
+/* ===================== leitura do arquivo ===================== */
+
 void lerArquivo(int *vetor, int n, const char *nomeArquivo) {
     FILE *file = fopen(nomeArquivo, "r");
     if (!file) {
@@ -58,65 +107,100 @@ void lerArquivo(int *vetor, int n, const char *nomeArquivo) {
     fclose(file);
 }
 
-int main() 
-{
+static void preencherCrescente(int *vetor, int n) {
+    for (int i = 0; i < n; i++) vetor[i] = i;
+}
+
+static void preencherDecrescente(int *vetor, int n) {
+    for (int i = 0; i < n; i++) vetor[i] = n - i;
+}
+
+/* ===================== testes de tempo ===================== */
+
+static double medirTempoHeapSort(int *vetor, int n) {
+    clock_t inicio = clock();
+    heapSort(vetor, n);
+    clock_t fim = clock();
+    return (double)(fim - inicio) / CLOCKS_PER_SEC;
+}
+
+static void imprimirRodada(const char *rotulo, int rodada, double tempoSegundos) {
+    printf("tempo %s rodada %d: %.10f s, %.2f us\n",
+           rotulo, rodada, tempoSegundos, tempoSegundos * 1e6);
+}
+
+static void imprimirMedia(const char *rotulo, double somaTempos, int numTestes) {
+    double media = somaTempos / numTestes;
+    printf("media %s: %.10f s, %.2f us\n\n",
+           rotulo, media, media * 1e6);
+}
+
+static void executarTesteCrescente(int *vetor, int n, int numTestes) {
+    double soma = 0.0;
+    for (int j = 0; j < numTestes; j++) {
+        preencherCrescente(vetor, n);
+        double t = medirTempoHeapSort(vetor, n);
+        soma += t;
+        imprimirRodada("crescente", j + 1, t);
+    }
+    imprimirMedia("crescente", soma, numTestes);
+}
+
+static void executarTesteDecrescente(int *vetor, int n, int numTestes) {
+    double soma = 0.0;
+    for (int j = 0; j < numTestes; j++) {
+        preencherDecrescente(vetor, n);
+        double t = medirTempoHeapSort(vetor, n);
+        soma += t;
+        imprimirRodada("decrescente", j + 1, t);
+    }
+    imprimirMedia("decrescente", soma, numTestes);
+}
+
+static void executarTesteAleatorioArquivo(int *vetor, int n, int numTestes, const char *arquivo) {
+    double soma = 0.0;
+    for (int j = 0; j < numTestes; j++) {
+        lerArquivo(vetor, n, arquivo);
+        double t = medirTempoHeapSort(vetor, n);
+        soma += t;
+        imprimirRodada("aleatorio", j + 1, t);
+    }
+    imprimirMedia("aleatorio", soma, numTestes);
+}
+
+/* ===================== main ===================== */
+
+int main() {
+    int opcao;
+
+    printf("1) Demonstracao HeapSort (passo a passo, n=10)\n");
+    printf("2) Testes de tempo\n");
+    printf("Escolha: ");
+    if (scanf("%d", &opcao) != 1) return 1;
+
+    if (opcao == 1) {
+        int demo[10] = {7, 2, 9, 4, 3, 8, 5, 1, 6, 0};
+        heapSortDemo(demo, 10);
+        return 0;
+    }
+
     int n, numTestes;
+
     printf("tamanho do vetor:  ");
     scanf("%d", &n);
-    printf("número de testes:  ");
+
+    printf("numero de testes:  ");
     scanf("%d", &numTestes);
 
-    int *vetor = (int*)malloc(n * sizeof(int));
-
-    srand(time(NULL));
-
-    // crescente
-    double somaCrescente = 0.0;
-    for (int j = 0; j < numTestes; j++) {
-        for(int i = 0; i < n; i++) vetor[i] = i;
-
-        clock_t inicio = clock();
-        heapSort(vetor, n);
-        clock_t fim = clock();
-
-        double tempoSegundos = (double)(fim - inicio) / CLOCKS_PER_SEC;
-        somaCrescente += tempoSegundos;
-
-        printf("tempo crescente rodada %d: %.10f s, %.2f us\n", j+1, tempoSegundos, tempoSegundos*1e6);
+    int *vetor = (int*)malloc((size_t)n * sizeof(int));
+    if (!vetor) {
+        printf("erro: falha ao alocar memoria para n=%d\n", n);
+        return 1;
     }
-    printf("media crescente: %.10f s, %.2f us\n\n", somaCrescente/numTestes, (somaCrescente*1e6)/numTestes);
 
-    // decrescente
-    double somaDecrescente = 0.0;
-    for (int j = 0; j < numTestes; j++) {
-        for(int i = 0; i < n; i++) vetor[i] = n - i;
-
-        clock_t inicio = clock();
-        heapSort(vetor, n);
-        clock_t fim = clock();
-
-        double tempoSegundos = (double)(fim - inicio) / CLOCKS_PER_SEC;
-        somaDecrescente += tempoSegundos;
-
-        printf("tempo decrescente rodada %d: %.10f s, %.2f us\n", j+1, tempoSegundos, tempoSegundos*1e6);
-    }
-    printf("media decrescente: %.10f s, %.2f us\n\n", somaDecrescente/numTestes, (somaDecrescente*1e6)/numTestes);
-
-    // aleatório -> lê do arquivo
-    double somaAleatorio = 0.0;
-    for (int j = 0; j < numTestes; j++) {
-        lerArquivo(vetor, n, "baseDeDados.txt");
-
-        clock_t inicio = clock();
-        heapSort(vetor, n);
-        clock_t fim = clock();
-
-        double tempoSegundos = (double)(fim - inicio) / CLOCKS_PER_SEC;
-        somaAleatorio += tempoSegundos;
-
-        printf("tempo aleatorio rodada %d: %.10f s, %.2f us\n", j+1, tempoSegundos, tempoSegundos*1e6);
-    }
-    printf("media aleatorio: %.10f s, %.2f us\n\n", somaAleatorio/numTestes, (somaAleatorio*1e6)/numTestes);
+    executarTesteCrescente(vetor, n, numTestes);
+    executarTesteDecrescente(vetor, n, numTestes);
+    executarTesteAleatorioArquivo(vetor, n, numTestes, "baseDeDados.txt");
 
     free(vetor);
     return 0;
