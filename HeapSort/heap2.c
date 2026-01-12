@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-// De acordo com o chat esta modularizado  
-/* =========================
-   Funções já existentes
-   ========================= */
+
 
 // faz as trocas dos valores no vetor
 void swap(int *a, int *b) {
@@ -62,17 +59,12 @@ void lerArquivo(int *vetor, int n, const char *nomeArquivo) {
     fclose(file);
 }
 
-/* =========================
-   Novas funções (modularização)
-   * Não altera a lógica
-   ========================= */
 
 static void preencherCrescente(int *vetor, int n) {
     for (int i = 0; i < n; i++) vetor[i] = i;
 }
 
 static void preencherDecrescente(int *vetor, int n) {
-    // Mantendo a mesma lógica do seu código original (n, n-1, ..., 1)
     for (int i = 0; i < n; i++) vetor[i] = n - i;
 }
 
@@ -129,10 +121,6 @@ static double executarTesteAleatorioArquivo(int *vetor, int n, int numTestes, co
     imprimirMedia("aleatorio", soma, numTestes);
     return soma;
 }
-
-/* =========================
-   main
-   ========================= */
 
 int main() {
     int n, numTestes;
