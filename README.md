@@ -7,4 +7,4 @@
 
 ## Algoritmos Implementados
 - [x] Heap Sort
-- [ ] Gnome Sort (Pendente)
+- [x] Gnome Sort
