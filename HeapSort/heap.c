@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-/* ===================== utilitarios ===================== */
 
 static void imprimirVetorInline(const int *arr, int n) {
     printf("[");
@@ -55,7 +54,7 @@ void heapSort(int arr[], int n) {
     }
 }
 
-/* ===================== DEMO (saida limpa) ===================== */
+/* ===================== DEMO ===================== */
 
 static void heapSortDemo(int arr[], int n) {
     printf("\n=== HEAPSORT (DEMO, n=%d) ===\n", n);
